@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import CreateCampaign from '../components/CreateCampaign'
 
 const Campaigns = () => {
   const [showNewCampaign, setShowNewCampaign] = useState(false)
@@ -22,6 +23,16 @@ const Campaigns = () => {
 
     fetchCampaigns()
   }, [])
+
+  const handleCreateCampaign = async (campaignData) => {
+    try {
+      console.log('Creating campaign:', campaignData)
+      setShowNewCampaign(false)
+      // await fetchCampaigns()
+    } catch (error) {
+      console.error('Error creating campaign:', error)
+    }
+  }
 
   return (
     <div>
@@ -77,7 +88,11 @@ const Campaigns = () => {
         )}
       </div>
 
-      {/* Campaign creation modal will be added here */}
+      <CreateCampaign
+        isOpen={showNewCampaign}
+        onClose={() => setShowNewCampaign(false)}
+        onSubmit={handleCreateCampaign}
+      />
     </div>
   )
 }
