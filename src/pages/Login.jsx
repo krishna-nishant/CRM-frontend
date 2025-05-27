@@ -1,6 +1,20 @@
+import { useAuth } from '../context/AuthContext';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+
 const Login = () => {
-  const handleGoogleLogin = () => {
-    console.log('Google login clicked')
+  const { user, login, checkAuth, error } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.search.includes('success=true')) {
+      checkAuth();
+    }
+  }, [location, checkAuth]);
+
+  // Redirect if already logged in
+  if (user) {
+    return <Navigate to="/" />;
   }
 
   return (
@@ -8,8 +22,14 @@ const Login = () => {
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-8">Welcome to CRM Platform</h1>
         
+        {error && (
+          <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-lg">
+            {error}
+          </div>
+        )}
+        
         <button
-          onClick={handleGoogleLogin}
+          onClick={login}
           className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
