@@ -6,12 +6,6 @@ const Campaigns = () => {
   const [showNewCampaign, setShowNewCampaign] = useState(false)
   const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
-  const [newCampaign, setNewCampaign] = useState({
-    name: '',
-    message: '',
-    rules: [{ condition: 'totalSpent', operator: 'gt', value: 0 }]
-  })
-  const [previewStats, setPreviewStats] = useState(null)
 
   useEffect(() => {
     fetchCampaigns()
@@ -19,7 +13,7 @@ const Campaigns = () => {
 
   const fetchCampaigns = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/campaigns', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/campaigns`, {
         withCredentials: true
       })
       setCampaigns(response.data)
@@ -30,53 +24,16 @@ const Campaigns = () => {
     }
   }
 
-  const handlePreview = async () => {
+  const handleCreateCampaign = async (campaignData) => {
     try {
-      const response = await axios.post(
-        'http://localhost:3000/api/campaigns/preview',
-        { rules: newCampaign.rules },
-        { withCredentials: true }
-      )
-      setPreviewStats(response.data)
-    } catch (error) {
-      console.error('Error previewing campaign:', error)
-    }
-  }
-
-  const handleCreateCampaign = async (e) => {
-    e.preventDefault()
-    try {
-      await axios.post('http://localhost:3000/api/campaigns', newCampaign, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/campaigns`, campaignData, {
         withCredentials: true
       })
       setShowNewCampaign(false)
-      setNewCampaign({
-        name: '',
-        message: '',
-        rules: [{ condition: 'totalSpent', operator: 'gt', value: 0 }]
-      })
       fetchCampaigns()
     } catch (error) {
       console.error('Error creating campaign:', error)
     }
-  }
-
-  const addRule = () => {
-    setNewCampaign({
-      ...newCampaign,
-      rules: [...newCampaign.rules, { condition: 'totalSpent', operator: 'gt', value: 0 }]
-    })
-  }
-
-  const updateRule = (index, field, value) => {
-    const updatedRules = [...newCampaign.rules]
-    updatedRules[index] = { ...updatedRules[index], [field]: value }
-    setNewCampaign({ ...newCampaign, rules: updatedRules })
-  }
-
-  const removeRule = (index) => {
-    const updatedRules = newCampaign.rules.filter((_, i) => i !== index)
-    setNewCampaign({ ...newCampaign, rules: updatedRules })
   }
 
   if (loading) {
@@ -148,119 +105,11 @@ const Campaigns = () => {
         </table>
       </div>
 
-      {showNewCampaign && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-            <h2 className="text-xl font-bold mb-4">Create New Campaign</h2>
-            <form onSubmit={handleCreateCampaign}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Campaign Name</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={newCampaign.name}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Message</label>
-                  <textarea
-                    required
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={newCampaign.message}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, message: e.target.value })}
-                    placeholder="Use {name} to personalize the message"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Targeting Rules</label>
-                  {newCampaign.rules.map((rule, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2">
-                      <select
-                        className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        value={rule.condition}
-                        onChange={(e) => updateRule(index, 'condition', e.target.value)}
-                      >
-                        <option value="totalSpent">Total Spent</option>
-                        <option value="lastPurchase">Last Purchase</option>
-                      </select>
-                      <select
-                        className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        value={rule.operator}
-                        onChange={(e) => updateRule(index, 'operator', e.target.value)}
-                      >
-                        <option value="gt">Greater than</option>
-                        <option value="lt">Less than</option>
-                        <option value="eq">Equal to</option>
-                      </select>
-                      <input
-                        type="number"
-                        className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        value={rule.value}
-                        onChange={(e) => updateRule(index, 'value', Number(e.target.value))}
-                      />
-                      {newCampaign.rules.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeRule(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addRule}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    + Add Rule
-                  </button>
-                </div>
-
-                {previewStats && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                    <h3 className="text-sm font-medium text-gray-700">Preview</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Estimated audience size: {previewStats.audienceSize}
-                      <br />
-                      Estimated delivery time: {previewStats.estimatedDeliveryTime}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={handlePreview}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                >
-                  Preview
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowNewCampaign(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-                >
-                  Create Campaign
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateCampaign
+        isOpen={showNewCampaign}
+        onClose={() => setShowNewCampaign(false)}
+        onSubmit={handleCreateCampaign}
+      />
     </div>
   )
 }

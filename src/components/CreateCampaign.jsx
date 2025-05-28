@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Modal from './Modal';
 import RuleBuilder from './RuleBuilder';
+import NaturalLanguageInput from './NaturalLanguageInput';
+import axios from 'axios';
 
 const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
   const [campaignData, setCampaignData] = useState({
@@ -10,17 +12,44 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
   });
 
   const [previewStats, setPreviewStats] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(campaignData);
+    const submitData = {
+      ...campaignData,
+      rules: campaignData.rules.map(({ id, ...rule }) => rule)
+    };
+    onSubmit(submitData);
   };
 
   const handlePreview = async () => {
-    setPreviewStats({
-      audienceSize: 0,
-      estimatedDeliveryTime: '5 minutes'
-    });
+    if (!campaignData.rules.length) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/campaigns/preview`,
+        { rules: campaignData.rules.map(({ id, ...rule }) => rule) },
+        { withCredentials: true }
+      );
+      setPreviewStats(response.data);
+    } catch (error) {
+      console.error('Error getting preview:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRulesGenerated = (rules) => {
+    const rulesWithIds = rules.map(rule => ({
+      ...rule,
+      id: Date.now() + Math.random()
+    }));
+    setCampaignData(prev => ({ ...prev, rules: rulesWithIds }));
+    handlePreview();
   };
 
   return (
@@ -56,12 +85,28 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Audience Rules
+            Define Your Audience
           </label>
-          <RuleBuilder
-            rules={campaignData.rules}
-            onChange={(rules) => setCampaignData({ ...campaignData, rules })}
-          />
+          <div className="space-y-4">
+            <NaturalLanguageInput onRulesGenerated={handleRulesGenerated} />
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  Or use the rule builder
+                </span>
+              </div>
+            </div>
+            <RuleBuilder
+              rules={campaignData.rules}
+              onChange={(rules) => {
+                setCampaignData({ ...campaignData, rules });
+                setPreviewStats(null);
+              }}
+            />
+          </div>
         </div>
 
         {previewStats && (
@@ -76,13 +121,23 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
           <button
             type="button"
             onClick={handlePreview}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            disabled={loading || !campaignData.rules.length}
+            className={`px-4 py-2 rounded ${
+              loading || !campaignData.rules.length
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
-            Preview Audience
+            {loading ? 'Loading...' : 'Preview Audience'}
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={loading}
+            className={`px-4 py-2 rounded text-white ${
+              loading
+                ? 'bg-blue-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             Create Campaign
           </button>
