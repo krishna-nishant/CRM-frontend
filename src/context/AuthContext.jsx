@@ -1,6 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
+
+// Configure axios defaults
+axios.defaults.withCredentials = true;
 
 const AuthContext = createContext();
 
@@ -12,58 +15,66 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+  const authCheckRef = useRef(false);
 
   const checkAuth = async () => {
+    if (authCheckRef.current) return;
+    authCheckRef.current = true;
+
     try {
       setError(null);
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
       if (response.data) {
         setUser(response.data);
       }
     } catch (error) {
-      console.error('Authentication error:', error);
       setUser(null);
     } finally {
       setLoading(false);
+      setInitialCheckDone(true);
     }
   };
 
   useEffect(() => {
-    // Check auth status when component mounts
-    checkAuth();
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
 
-    // Also check when the URL includes success=true
-    const checkSuccessParam = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('success') === 'true') {
-        checkAuth();
-      }
-    };
-
-    window.addEventListener('popstate', checkSuccessParam);
-    checkSuccessParam();
-
-    return () => {
-      window.removeEventListener('popstate', checkSuccessParam);
-    };
-  }, []);
+    if (success === 'true') {
+      checkAuth();
+    } else if (error === 'true') {
+      setError('Authentication failed');
+      setLoading(false);
+      setInitialCheckDone(true);
+    } else if (!initialCheckDone) {
+      checkAuth();
+    }
+  }, [initialCheckDone]);
 
   const login = () => {
+    setLoading(true);
     window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
   };
 
   const logout = async () => {
     try {
+      setLoading(true);
       await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
         withCredentials: true
       });
       setUser(null);
       window.location.href = '/login';
     } catch (error) {
-      console.error('Logout error:', error);
       setError('Failed to logout');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,10 +84,11 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    initialCheckDone
   };
 
-  if (loading) {
+  if (loading && !initialCheckDone) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white">
         <div className="p-8 rounded-2xl bg-white shadow-lg flex flex-col items-center">
