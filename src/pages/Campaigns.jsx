@@ -104,7 +104,6 @@ const Campaigns = () => {
       fetchCampaigns()
     } catch (error) {
       console.error('Error starting campaign:', error)
-      alert('Failed to start campaign. Please try again.')
     }
   }
 

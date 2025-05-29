@@ -31,7 +31,6 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
       onSubmit(response.data);
     } catch (error) {
       console.error('Error creating campaign:', error);
-      alert('Failed to create campaign. Please try again.');
     } finally {
       setLoading(false);
     }
