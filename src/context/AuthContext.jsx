@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const AuthContext = createContext();
 
@@ -60,9 +61,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-lg">Loading...</div>
-    </div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white">
+        <div className="p-8 rounded-2xl bg-white shadow-lg flex flex-col items-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600 font-medium animate-pulse">
+            Initializing your workspace...
+          </p>
+          <div className="mt-2 text-sm text-gray-500">
+            Please wait while we set up your session
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

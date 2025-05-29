@@ -6,19 +6,25 @@ const Navbar = () => {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold">CRM Platform</span>
+              <span className="text-xl font-bold text-white">CRM Platform</span>
             </Link>
             
             {user && (
-              <div className="ml-10 flex items-center space-x-4">
-                <Link to="/" className="text-gray-700 hover:text-gray-900">Dashboard</Link>
-                <Link to="/customers" className="text-gray-700 hover:text-gray-900">Customers</Link>
-                <Link to="/campaigns" className="text-gray-700 hover:text-gray-900">Campaigns</Link>
+              <div className="ml-10 flex items-center space-x-6">
+                <Link to="/" className="text-white hover:text-blue-100 transition-colors px-3 py-2 text-sm font-medium rounded-md hover:bg-blue-600">
+                  Dashboard
+                </Link>
+                <Link to="/customers" className="text-white hover:text-blue-100 transition-colors px-3 py-2 text-sm font-medium rounded-md hover:bg-blue-600">
+                  Customers
+                </Link>
+                <Link to="/campaigns" className="text-white hover:text-blue-100 transition-colors px-3 py-2 text-sm font-medium rounded-md hover:bg-blue-600">
+                  Campaigns
+                </Link>
               </div>
             )}
           </div>
@@ -31,16 +37,16 @@ const Navbar = () => {
                     <img
                       src={user.picture}
                       alt={user.name}
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full ring-2 ring-white"
                     />
                   ) : (
-                    <UserCircleIcon className="h-8 w-8 text-gray-600" />
+                    <UserCircleIcon className="h-8 w-8 text-white" />
                   )}
-                  <span className="text-gray-700">{user.name}</span>
+                  <span className="text-white text-sm font-medium">{user.name}</span>
                 </div>
                 <button
                   onClick={logout}
-                  className="text-gray-600 hover:text-gray-900 flex items-center"
+                  className="text-white hover:text-blue-100 transition-colors px-3 py-2 text-sm font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Logout
                 </button>
@@ -48,7 +54,7 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center text-gray-600 hover:text-gray-900"
+                className="flex items-center text-white hover:text-blue-100 transition-colors"
               >
                 <UserCircleIcon className="h-6 w-6 mr-1" />
                 <span>Login</span>

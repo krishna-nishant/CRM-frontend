@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from './Modal';
 import RuleBuilder from './RuleBuilder';
 import NaturalLanguageInput from './NaturalLanguageInput';
+import LoadingSpinner from './LoadingSpinner';
 import axios from 'axios';
 
 const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
@@ -16,11 +17,24 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const submitData = {
-      ...campaignData,
-      rules: campaignData.rules.map(({ id, ...rule }) => rule)
-    };
-    onSubmit(submitData);
+    setLoading(true);
+    try {
+      const submitData = {
+        ...campaignData,
+        rules: campaignData.rules.map(({ id, ...rule }) => rule)
+      };
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/campaigns`,
+        submitData,
+        { withCredentials: true }
+      );
+      onSubmit(response.data);
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      alert('Failed to create campaign. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePreview = async () => {
@@ -122,24 +136,38 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
             type="button"
             onClick={handlePreview}
             disabled={loading || !campaignData.rules.length}
-            className={`px-4 py-2 rounded ${
+            className={`px-4 py-2 rounded inline-flex items-center ${
               loading || !campaignData.rules.length
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {loading ? 'Loading...' : 'Preview Audience'}
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Loading...
+              </>
+            ) : (
+              'Preview Audience'
+            )}
           </button>
           <button
             type="submit"
             disabled={loading}
-            className={`px-4 py-2 rounded text-white ${
+            className={`px-4 py-2 rounded text-white inline-flex items-center ${
               loading
                 ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            Create Campaign
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Creating...
+              </>
+            ) : (
+              'Create Campaign'
+            )}
           </button>
         </div>
       </form>

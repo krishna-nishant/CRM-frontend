@@ -1,6 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { 
+  MegaphoneIcon, 
+  UserGroupIcon, 
+  PlayIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  PlusIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline'
 import CreateCampaign from '../components/CreateCampaign'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 const Campaigns = () => {
   const [showNewCampaign, setShowNewCampaign] = useState(false)
@@ -97,123 +108,162 @@ const Campaigns = () => {
     }
   }
 
-  const handleCreateCampaign = async (campaignData) => {
-    try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/campaigns`, campaignData, {
-        withCredentials: true
-      })
-      setShowNewCampaign(false)
-      fetchCampaigns()
-    } catch (error) {
-      console.error('Error creating campaign:', error)
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircleIcon className="w-5 h-5 text-green-500" />
+      case 'failed':
+        return <XCircleIcon className="w-5 h-5 text-red-500" />
+      case 'active':
+        return <ClockIcon className="w-5 h-5 text-blue-500 animate-spin" />
+      case 'draft':
+        return <PlayIcon className="w-5 h-5 text-gray-500" />
+      default:
+        return <ClockIcon className="w-5 h-5 text-gray-500" />
     }
+  }
+
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'failed':
+        return 'bg-red-100 text-red-800'
+      case 'active':
+        return 'bg-blue-100 text-blue-800'
+      case 'draft':
+        return 'bg-gray-100 text-gray-600'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const CampaignCard = ({ campaign }) => {
+    const stats = campaignStats[campaign._id] || {}
+    const statusClass = getStatusBadgeColor(campaign.status)
+
+    return (
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <MegaphoneIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">{campaign.name}</h3>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass} mt-1`}>
+                  <span className="mr-1.5">{getStatusIcon(campaign.status)}</span>
+                  {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                </span>
+              </div>
+            </div>
+            {(campaign.status === 'pending' || campaign.status === 'draft') && (
+              <button
+                onClick={() => handleStartCampaign(campaign._id)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <PlayIcon className="h-4 w-4 mr-1.5" />
+                Start
+              </button>
+            )}
+          </div>
+          
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="flex items-center">
+              <UserGroupIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <div>
+                <p className="text-sm text-gray-500">Audience Size</p>
+                <p className="text-lg font-medium text-gray-900">
+                  {campaign.audienceSize.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <CheckCircleIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <div>
+                <p className="text-sm text-gray-500">Delivered</p>
+                <p className="text-lg font-medium text-gray-900">
+                  {(stats.sent || 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="flex items-center">
+              <XCircleIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <div>
+                <p className="text-sm text-gray-500">Failed</p>
+                <p className="text-lg font-medium text-red-600">
+                  {(stats.failed || 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <ChartBarIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <div>
+                <p className="text-sm text-gray-500">Success Rate</p>
+                <p className="text-lg font-medium text-green-600">
+                  {stats.sent ? Math.round((stats.sent / (stats.sent + stats.failed)) * 100) : 0}%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.round((stats.sent || 0) / campaign.audienceSize * 100)}%`
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
-        <button 
+        <button
           onClick={() => setShowNewCampaign(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
         >
-          Create Campaign
+          <PlusIcon className="h-5 w-5 mr-2" />
+          New Campaign
         </button>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Audience Size
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Progress
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {campaigns.map((campaign) => {
-              const stats = campaignStats[campaign._id] || { queued: 0, sent: 0, failed: 0 }
-              const total = stats.queued + stats.sent + stats.failed || campaign.audienceSize || 0
-              const progress = total > 0 ? Math.round(((stats.sent + stats.failed) / total) * 100) : 0
-
-              return (
-                <tr key={campaign._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      campaign.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      campaign.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                      campaign.status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {campaign.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{campaign.audienceSize}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className={`h-2.5 rounded-full ${
-                          campaign.status === 'failed' ? 'bg-red-600' :
-                          campaign.status === 'completed' ? 'bg-green-600' :
-                          'bg-blue-600'
-                        }`}
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs mt-1 text-gray-500">
-                      {stats.sent} sent, {stats.failed} failed, {stats.queued} queued
-                      {campaign.status === 'active' && (
-                        <span className="ml-2 animate-pulse">Processing...</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {campaign.status === 'draft' && (
-                      <button
-                        onClick={() => handleStartCampaign(campaign._id)}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700"
-                      >
-                        Start Campaign
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {campaigns.map((campaign) => (
+          <CampaignCard key={campaign._id} campaign={campaign} />
+        ))}
       </div>
 
-      <CreateCampaign
-        isOpen={showNewCampaign}
-        onClose={() => setShowNewCampaign(false)}
-        onSubmit={handleCreateCampaign}
-      />
+      {showNewCampaign && (
+        <CreateCampaign
+          isOpen={showNewCampaign}
+          onClose={() => setShowNewCampaign(false)}
+          onSubmit={(newCampaign) => {
+            setCampaigns(prev => [newCampaign, ...prev]);
+            setShowNewCampaign(false);
+            fetchCampaignStats(newCampaign._id);
+          }}
+        />
+      )}
     </div>
   )
 }
