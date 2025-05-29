@@ -31,7 +31,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Check auth status when component mounts
     checkAuth();
+
+    // Also check when the URL includes success=true
+    const checkSuccessParam = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('success') === 'true') {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener('popstate', checkSuccessParam);
+    checkSuccessParam();
+
+    return () => {
+      window.removeEventListener('popstate', checkSuccessParam);
+    };
   }, []);
 
   const login = () => {
