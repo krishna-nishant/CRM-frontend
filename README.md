@@ -42,7 +42,11 @@ graph TD
   - Natural language input support
 - Real-time audience size preview
 - Campaign history with detailed analytics
-- AI-powered message suggestions
+- AI-powered campaign suggestions:
+  - Smart campaign name suggestions
+  - Pre-written message templates
+  - Targeted audience recommendations
+  - Automatic rule generation based on objectives
 - Campaign performance tracking
 
 ### 2. Authentication & Security
@@ -184,6 +188,7 @@ Common issues and solutions:
 ### 3. Campaign Creation
 - Dynamic rule builder interface
 - Natural language input for rules
+- AI-generated campaign suggestions
 - Audience size preview
 - Message template input
 

@@ -143,7 +143,8 @@ const Customers = () => {
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="min-w-full divide-y divide-gray-200">
+        {/* Desktop view */}
+        <div className="hidden md:block min-w-full divide-y divide-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -170,6 +171,36 @@ const Customers = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile view */}
+        <div className="md:hidden divide-y divide-gray-200">
+          {customers.map((customer) => (
+            <div key={customer._id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-gray-900">{customer.name}</div>
+                <div className="text-sm text-gray-500">
+                  <CalendarIcon className="h-4 w-4 inline mr-1" />
+                  {new Date(customer.lastVisit).toLocaleDateString()}
+                </div>
+              </div>
+              
+              <div className="flex items-center text-sm text-gray-500">
+                <EnvelopeIcon className="h-4 w-4 mr-2" />
+                {customer.email}
+              </div>
+              
+              <div className="flex items-center text-sm text-gray-500">
+                <PhoneIcon className="h-4 w-4 mr-2" />
+                {customer.phone}
+              </div>
+              
+              <div className="flex items-center text-sm text-gray-500">
+                <CurrencyRupeeIcon className="h-4 w-4 mr-2" />
+                ₹{customer.totalSpent.toLocaleString('en-IN')}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
