@@ -14,6 +14,8 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
 
   const [previewStats, setPreviewStats] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,6 +58,35 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
     }
   };
 
+  const handleGetSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/campaigns/suggestions`,
+        {},
+        { withCredentials: true }
+      );
+      setSuggestions(response.data.suggestions);
+    } catch (error) {
+      console.error('Error getting suggestions:', error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleSuggestionSelect = (suggestion) => {
+    setCampaignData({
+      name: suggestion.name,
+      message: suggestion.message,
+      rules: suggestion.rules ? suggestion.rules.map(rule => ({
+        ...rule,
+        id: Date.now() + Math.random()
+      })) : []
+    });
+    setSuggestions([]);
+    handlePreview();
+  };
+
   const handleRulesGenerated = (rules) => {
     const rulesWithIds = rules.map(rule => ({
       ...rule,
@@ -67,6 +98,49 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Campaign">
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={handleGetSuggestions}
+          disabled={loadingSuggestions}
+          className={`w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+            loadingSuggestions ? 'opacity-75 cursor-not-allowed' : ''
+          }`}
+        >
+          {loadingSuggestions ? (
+            <div className="flex items-center justify-center">
+              <LoadingSpinner size="sm" className="mr-2" />
+              Getting Suggestions...
+            </div>
+          ) : (
+            'Get Campaign Suggestions'
+          )}
+        </button>
+      </div>
+
+      {suggestions.length > 0 && (
+        <div className="mb-6 space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">Suggested Campaigns</h3>
+          <div className="space-y-3">
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className="p-4 border rounded-md hover:bg-gray-50 cursor-pointer"
+                onClick={() => handleSuggestionSelect(suggestion)}
+              >
+                <h4 className="font-medium text-gray-900">{suggestion.name}</h4>
+                <p className="text-sm text-gray-500 mt-1">{suggestion.objective}</p>
+                {suggestion.audienceSize && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    Estimated audience: {suggestion.audienceSize} customers
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -98,35 +172,28 @@ const CreateCampaign = ({ isOpen, onClose, onSubmit }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Define Your Audience
+            Target Audience Rules
           </label>
           <div className="space-y-4">
             <NaturalLanguageInput onRulesGenerated={handleRulesGenerated} />
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Or use the rule builder
-                </span>
-              </div>
-            </div>
             <RuleBuilder
               rules={campaignData.rules}
               onChange={(rules) => {
                 setCampaignData({ ...campaignData, rules });
-                setPreviewStats(null);
+                handlePreview();
               }}
             />
           </div>
         </div>
 
         {previewStats && (
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-medium text-blue-900">Audience Preview</h3>
-            <p className="text-blue-700">Estimated audience size: {previewStats.audienceSize}</p>
-            <p className="text-blue-700">Estimated delivery time: {previewStats.estimatedDeliveryTime}</p>
+          <div className="bg-blue-50 p-4 rounded-md">
+            <h4 className="text-sm font-medium text-blue-900">Preview</h4>
+            <p className="mt-1 text-sm text-blue-700">
+              Estimated audience size: {previewStats.audienceSize} customers
+              <br />
+              Estimated delivery time: {previewStats.estimatedDeliveryTime}
+            </p>
           </div>
         )}
 
